@@ -21,11 +21,13 @@ async function sandbox (searchLink) {
       }
     }
     console.log("Nombre de restaurant : "+countResto);   
-    //console.log(bib_list);
-    /*fs.writeFile('bib_list.json', JSON.stringify(bib_list), (err) => {
-      if (err) throw err;
-      console.log('Data written to file');
-    });*/
+    listBib = JSON.stringify(bib_list,null,3);
+    fs.writeFileSync('bib.json',listBib),(err)=>{
+        if(err){
+        console.log(err);
+        }
+        console.log('File created');
+    };
   
     console.log('done');
     process.exit(0);
@@ -48,5 +50,5 @@ async function sandboxPost (page) {
 
 const [,, searchLink] = process.argv;
 
-//sandbox(searchLink);
-sandboxPost(0);
+sandbox(searchLink);
+//sandboxPost(0);

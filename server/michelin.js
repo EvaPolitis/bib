@@ -72,3 +72,4 @@ module.exports.scrapeAllRestaurant = async page =>{
   return null;
 };
 
+    

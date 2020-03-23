@@ -8,16 +8,16 @@ async function sandbox (searchLink) {
     console.log(`🕵️‍♀️  browsing ${searchLink} source`);
     let bib_list=[];
     let countResto=0;
-    for(let numPage = 1; numPage<2; numPage++){
+    for(let numPage = 1; numPage<15; numPage++){
       console.log(numPage)
       const page = await michelin.scrapeAllRestaurant("https://guide.michelin.com/fr/fr/restaurants/bib-gourmand/page/"+numPage);
       console.log(page[0]);
       
-      for(let numResto = 0; numResto < 4; numResto++){
+      for(let numResto = 0; numResto < 40; numResto++){
         const restaurant = await michelin.scrapeRestaurant(page[numResto]);
         countResto++;
         bib_list.push(restaurant);
-        //console.log(restaurant);
+        console.log(restaurant);
       }
     }
     console.log("Nombre de restaurant : "+countResto);   
@@ -35,21 +35,18 @@ async function sandbox (searchLink) {
   }
 }
 
-/*async function sandboxPost (page) {
+async function sandboxPost (page) {
   try {
-
-    const restaurant = await restaurateurs.scrapeRestaurantPost(page);
-
-    //console.log(restaurant);
-    //console.log('done');
+    console.log(`🕵️‍♀️  browsing ${page} source`);
+    const restaurant = await maitre.scrapeMaitre(0);
     process.exit(0);
   } catch (e) {
     console.error(e);
     process.exit(1);
   }
-}*/
+}
 
 const [,, searchLink] = process.argv;
 
-sandbox(searchLink);
-//sandboxPost(0);
+//sandbox(searchLink);
+sandboxPost(0);

@@ -1,6 +1,137 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const querystring = require('querystring');
+const fs = require('fs');
+
+const parsePageM = data =>{
+  let $ = cheerio.load(data);
+  var restaurants = [];
+  try{
+      $('div.single_desc').each((i,element)=>{
+      $ = cheerio.load(element);
+      let nom = $('div.single_libel > a ').text().replace(/\r?\n|\r/g,"");
+      let adresse = $('div.single_info3 > div:nth-child(2)').text().replace(/\r?\n|\r|\t/g,"");
+      restaurants.push({
+        name:nom,
+        adress:adresse,
+      })
+      });
+
+  }
+  catch(error){
+      console.log(error);
+      return null;
+  }
+
+  return restaurants;
+}
+
+const parseNbRestoArray = data =>{
+  const $ = cheerio.load(data);
+  return $('.annuaire_single').length;
+}
+
+const parseNbTotalResto = data=>{
+  const $ = cheerio.load(data);
+  return parseInt($('#topbar_nb_persons').text().split('R')[0]);
+}
+
+module.exports.scrapeMaitre = async page => {
+  let payload={
+    'page':page,
+    'request_id':'77c4da74460d7b02cff1e8415404ea3a'
+  };
+  let options={
+    'url':'https://www.maitresrestaurateurs.fr/annuaire/ajax/loadresult',
+    'method':'POST',
+    'headers':{'content-type':'application/x-www-form-urlencoded'},
+    'data':querystring.stringify(payload)
+  }
+  let response = await axios(options);
+  let {data,status}=response;
   
+  if(status>=200 && status <300){
+    const nbRestoArray=parseNbRestoArray(data);
+    const nb_res=parseNbTotalResto(data);
+    const restaurants = [];
+    restaurants.push(parsePageM(data));
+
+   for (let i=2; i<=(nb_res/nbRestoArray)+1;i++){
+        //console.log(i);
+        payload={
+          'page':i,
+          'request_id':'77c4da74460d7b02cff1e8415404ea3a'
+        };
+        options={
+          'url':'https://www.maitresrestaurateurs.fr/annuaire/ajax/loadresult',
+          'method':'POST',
+          'headers':{'content-type':'application/x-www-form-urlencoded'},
+          'data':querystring.stringify(payload)
+        }
+        response = await axios(options);
+        let {data,status} = response;
+  
+        if(status>=200 && status<300){
+          results = parsePageM(data);
+          restaurants.push(results);
+          for (let j=0; j<results.length;j++){
+            restaurants.push(results[j]);
+          }
+        }
+    }
+    console.log(restaurants);
+    listRestaurant = JSON.stringify(restaurants,null,3);
+    fs.writeFileSync('maitre.json',listRestaurant),(err)=>{
+        if(err){
+        console.log(err);
+        }
+        console.log('File created');
+    };
+    return null;
+
+  }
+  else{
+      console.error(status);
+  }
+
+  return null;
+}
+
+/*module.exports.scrapePage = async page =>{
+  const payload = {
+      'page': page,
+      'request_id': '77c4da74460d7b02cff1e8415404ea3a'
+  }
+   .post('https://www.maitresrestaurateurs.fr/annuaire/ajax/loadresult')
+   console.log("etape1");
+  if(status>=200&&status<300){
+    return parsePageM(data);
+  }
+  console.error(status);
+  return null;
+};*/
+
+/*module.exports.scrapeAllRestaurant = async page =>{
+    const response=await axios(page);
+    const {data, status} = response;
+    console.log("etape1");
+    if(status>=200 && status<300){
+      return parsePageM(data);
+    }
+    console.error(status);
+    return null;
+  };*/
+
+/*module.exports.scrapePage = async pageM =>{
+  const response=await axios(pageM);
+  const {data, status} = response;
+
+  if(status>=200 && status<300){
+    return parsePage(data);
+  }
+  console.error(status);
+  return null;
+};*/
 
 /**
  * Parse webpage restaurant
@@ -60,123 +191,4 @@ module.exports.get = () => {
   return links;
 };*/
 
-const parsePageM = data =>{
-  let $ = cheerio.load(data);
-  var restaurants = [];
-  try{
-      $('div.single_desc').each((i,element)=>{
-      $ = cheerio.load(element);
-      let nom = $('div.single_libel > a ').text().replace(/\r?\n|\r/g,"");
-      let adresse = $('div.single_info3 > div:nth-child(2)').text().replace(/\r?\n|\r|\t/g,"");
-      let telephone = $('div.single_info3 > div:nth-child(3)').text().replace(/\s/g, "");
-
-      restaurants.push({
-        name:nom,
-        adress:adresse,
-        phone:telephone
-      })
-      });
-
-  }
-  catch(error){
-      console.log(error);
-      return null;
-  }
-
-  return restaurants;
-}
-
-/*module.exports.scrapePage = async pageM =>{
-  const response=await axios(pageM);
-  const {data, status} = response;
-
-  if(status>=200 && status<300){
-    return parsePage(data);
-  }
-  console.error(status);
-  return null;
-};*/
-const parseNbRestoPage = data =>{
-  const $ = cheerio.load(data);
-  return $('.annuaire_single').length;
-}
-
-const parseNbRestoTot = data=>{
-  const $ = cheerio.load(data);
-  return parseInt($('#topbar_nb_persons').text().split('R')[0]);
-}
-
-module.exports.scrapeRestaurantPost = async page => {
-  let payload={
-    'page':page,
-    'request_id':'77c4da74460d7b02cff1e8415404ea3a'
-  };
-
-  let options={
-    'url':'https://www.maitresrestaurateurs.fr/annuaire/ajax/loadresult',
-    'method':'POST',
-    'headers':{'content-type':'application/x-www-form-urlencoded'},
-    'data':querystring.stringify(payload)
-  }
-  
-  let response = await axios(options);
-  let {data,status}=response;
-  
-  if(status>=200 && status <300){
-    const nb_res_page=parseNbRestoPage(data);
-    const nb_res=parseNbRestoTot(data);
-    const dict = [];
-    dict.push(parsePageM(data));
-    for (let i=2; i<=(nb_res/nb_res_page)+1;i++){
-        console.log(i);
-        payload={
-          'page':i,
-          'request_id':'77c4da74460d7b02cff1e8415404ea3a'
-        };
-      
-        options={
-          'url':'https://www.maitresrestaurateurs.fr/annuaire/ajax/loadresult',
-          'method':'POST',
-          'headers':{'content-type':'application/x-www-form-urlencoded'},
-          'data':querystring.stringify(payload)
-        }
-         response = await axios(options);
-         let {data,status} = response;
-  
-         if(status>=200 && status<300){
-           results = parsePageM(data);
-           for (let j=0; j<results.length;j++){
-              dict.push(results[j]);
-           }
-         }
-        }
-        console.log(dict);
-        dictstring = JSON.stringify(dict,null,3);
-        fs.writeFileSync('maitre.json',dictstring),(err)=>{
-          if(err){
-            console.log(err);
-          }
-          console.log('File created');
-        };
-        return null;
-
-  }
-  else{
-      console.error(status);
-  }
-
-  return null;
-}
-/*module.exports.scrapePage = async page =>{
-  const payload = {
-      'page': page,
-      'request_id': '77c4da74460d7b02cff1e8415404ea3a'
-  }
-   .post('https://www.maitresrestaurateurs.fr/annuaire/ajax/loadresult')
-  if(status>=200&&status<300){
-    return parsePage(data);
-  }
-  console.error(status);
-  return null;
-};*/
 

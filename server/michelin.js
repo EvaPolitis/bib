@@ -49,14 +49,6 @@ module.exports.scrapeRestaurant = async url => {
 };
 
 /**
- * Get all France located Bib Gourmand restaurants
- * @return {Array} restaurants
- */
-/*module.exports.get = () => {
-  return [];
-};*/
-
-/**
  * Scrape a given restaurant url
  * @param  {String}  page
  * @return {Object} restaurant
